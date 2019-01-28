@@ -1,0 +1,8 @@
+language: csharp
+solution: UITesting.sln
+install:
+  - nuget restore UITesting.sln
+# - nuget install NUnit.Console -Version 3.9.0 -OutputDirectory testrunner
+script:
+  - msbuild /p:Configuration=Release UITesting.sln
+# - mono ./testrunner/NUnit.ConsoleRunner.3.9.0/tools/nunit3-console.exe ./203925.Tests/bin/Release/203925.Tests.dll
