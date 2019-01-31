@@ -10,6 +10,11 @@ namespace AndroidUITesting
 {
     class Scenarios : Fixtures
     {
-
+        [Test]
+        [TestCase(TestName = "**", //Ignore = "a completer",
+         Author = "TESTING DIGITAL")]
+        public void Hmm()
+        {
+        }
     }
 }

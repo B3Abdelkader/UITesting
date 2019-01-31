@@ -31,7 +31,7 @@ namespace AndroidUITesting
 
             #region Si Navigateur Mobile (Chrome)
             _cap.SetCapability(MobileCapabilityType.BrowserName, MobileBrowserType.Chrome);
-            _cap.SetCapability("chromedriverExecutable", @"C:\WEBDRIVERS\chromedriver.exe"); // Path ChromeDriver
+            _cap.SetCapability("chromedriverExecutable", @"C:\WEBDRIVERS\chromedriver.exe");
             #endregion Si Navigateur Mobile (Chrome)
 
             #region Capabilitées
@@ -48,7 +48,7 @@ namespace AndroidUITesting
                             (new Uri("http://" + GetLocalIPAddress() + ":" + PORT.ToString() + "/wd/hub"), _cap);
             _wait = new WebDriverWait(_driverANDROID, TimeSpan.FromSeconds(20));
             _driverANDROID.Navigate(). // Endpoint/page de depart
-                        GoToUrl("https://free.fr");
+                        GoToUrl("**");
         }
 
         [TearDown]
