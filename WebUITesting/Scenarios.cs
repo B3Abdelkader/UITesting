@@ -10,7 +10,7 @@ namespace WebUITesting
     class Scenarios : Fixtures
     {
         [Test]
-        [TestCase(TestName = "Simple visite de page...", Ignore = "pour CI",
+        [TestCase(TestName = "WebTest",// Ignore = "pour CI",
          Author = "@B3Abdelkader")]
         public void Mon1erTest()
         {

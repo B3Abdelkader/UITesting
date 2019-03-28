@@ -10,9 +10,8 @@ namespace AndroidUITesting
 {
     class Scenarios : Fixtures
     {
-        [Test]
-        [TestCase(TestName = "**", Ignore = "pour CI",
-         Author = "TESTING DIGITAL")]
+        [TestCase(TestName = "AndroidTest",// Ignore = "pour CI",
+        Author = "TESTING DIGITAL")]
         public void Hmm()
         {
         }
