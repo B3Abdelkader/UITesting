@@ -1,8 +1,8 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Interfaces;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Appium.Android;
 using OpenQA.Selenium.Appium.Enums;
-using OpenQA.Selenium.Appium.Service;
 using OpenQA.Selenium.Remote;
 using OpenQA.Selenium.Support.Extensions;
 using OpenQA.Selenium.Support.UI;
@@ -18,41 +18,55 @@ using System.Management;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TDDevices;
 
 namespace AndroidUITesting
-{
+{ //cmd appops set <package> READ_CLIPBOARD ignore
     public class Fixtures
     {
+        public List<string> ValueInput = new List<string> { "Alphanumerique123", "123456", "Alphabetique" };
+        public List<string> ValueTxt = new List<string> { "Alphanumerique123", "123456" };
         public AndroidDriver<AndroidElement> _driverANDROID;
         public WebDriverWait _wait;
         string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        public string UDID = "85946ab2";
+        //2XJDU17725001264 P:25-- P10 Lite
+        //0123456789ABCDEF P:27-- Lenny 2
+        //ce051715d018af3c03 P:23 -- Galaxy S8Plus
+        //1cc466b440027ece P:29 -- Galaxy S9
+        //ce061716c39258a30d7e P:31 -- Galaxy Note 8
+        //3300ec7c93ab338f P:33 -- Galaxy A5
+        public string UDID = "ce051715d018af3c03"; 
         public string computerName = Environment.MachineName;
         public int checkAppiumCount = 0, attemps = 0, PORT = 4723;
         public IWebElement element;
+
         Random rnd = new Random();
+        private TestContext ctx;
+        private ExecNotifBuilder ts = new ExecNotifBuilder();
+        public int Height, Width, x, y, starty, endy, startx;
+        public double startTime, endTime;
 
         [SetUp]
         public void SetUp()
         {
+            startTime = (DateTime.Now.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
             DesiredCapabilities _cap = new DesiredCapabilities();
-            _cap.SetCapability("autoGrantPermissions", true);
 
             #region Si Application (.apk)
-            //_cap.SetCapability("autoDismissAlerts", true);
-            //_cap.SetCapability(MobileCapabilityType.App, documents + @"" + "***.apk");
-            //_cap.SetCapability(AndroidMobileCapabilityType.AppPackage, "com.shapr");
-            //_cap.SetCapability(AndroidMobileCapabilityType.AppActivity, "com.shapr.feature.splash.SplashActivity");
+            _cap.SetCapability("autoGrantPermissions", true);
+            _cap.SetCapability("autoDismissAlerts", true);
+            _cap.SetCapability(MobileCapabilityType.App, @"C:\Users\CONNECTEUR-ROG-C\Downloads\686.apk");
+            _cap.SetCapability(AndroidMobileCapabilityType.AppPackage, "com.shapr");
+            _cap.SetCapability(AndroidMobileCapabilityType.AppActivity, "com.shapr.feature.splash.SplashActivity");
             //_cap.SetCapability(MobileCapabilityType.FullReset, true);
             //_cap.SetCapability(MobileCapabilityType.NoReset, false);
             #endregion Si Application (.apk)
 
             #region Si Navigateur Mobile (Chrome)
-            _cap.SetCapability(MobileCapabilityType.BrowserName, MobileBrowserType.Chrome);
-            _cap.SetCapability("chromedriverExecutable", @"C:\WEBDRIVERS\chromedriver.exe");
+            //_cap.SetCapability(MobileCapabilityType.BrowserName, MobileBrowserType.Chrome);
+            //_cap.SetCapability("chromedriverExecutable", @"C:\WEBDRIVERS\chromedriver.exe");
             #endregion Si Navigateur Mobile (Chrome)
 
             #region Capabilitées
@@ -66,41 +80,102 @@ namespace AndroidUITesting
 
             StartRemoteAppiumNode(PORT.ToString(), UDID, LocalIPAddress);
             _driverANDROID = new AndroidDriver<AndroidElement> // Serveur de lancement d'application
-                            (new Uri("http://" + LocalIPAddress+ ":" + PORT.ToString() + "/wd/hub"), _cap);
+                            (new Uri("http://" + LocalIPAddress + ":" + PORT.ToString() + "/wd/hub"), _cap);
             _wait = new WebDriverWait(_driverANDROID, TimeSpan.FromSeconds(20));
-            _driverANDROID.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
-            _driverANDROID.Navigate(). // Endpoint/page de depart
-                        GoToUrl("http://free.fr");
+            Height = _driverANDROID.Manage().Window.Size.Height;
+            Width = _driverANDROID.Manage().Window.Size.Width;
+            starty = Height / 2;
+            endy = (int)(Height * 0.90);
+            startx = Width / 2;
+            _driverANDROID.ResetApp(); // Caches et donnée a supprimer
         }
 
         [TearDown]
         public void TearDown()
         {
-            // Fermeture Application
+            endTime = (DateTime.Now.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            RPScreenshot("Status avant la fin de l'execution");
+            //Fermeture Application
             _driverANDROID.Quit();
+            TestContext ctx = TestContext.CurrentContext;
+            if (ctx.Result.Outcome == ResultState.Success)
+                ts.Passed++;
+            else
+            {
+                ts.Failed++;
+                ts.TestsFailedName.Add(ctx.Test.FullName);
+            }
+            ts.time += (endTime - startTime);
         }
 
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            if (ts.Failed==0 && ts.Passed!=0)
+            {
+                //Slack notif   
+                SlackClient slack = new SlackClient();
+                ctx = TestContext.CurrentContext;
+                slack.PostMessage(username: " ",
+                    text: "Téléphone(UDID): " + NomTelephone(UDID)
+                          + "  | OS: " + "ANDROID"
+                          + "  | BUILD: " + "PROD - 686"
+                          + "  | Passed: " + ts.Passed
+                          + "  | Failed: " + ts.Failed
+                          + "  | Temps d'execution: " + Math.Round(ts.time / 60) + " minute(s)"
+                          , channel: "#automatisation", attch: GetAttchement());
+            }
+        }
+
+        #region Attachements SLACK
+        private readonly List<TDDevices.Action> cxx = new List<TDDevices.Action>
+        {
+            new TDDevices.Action {Text = "Rapports 📃", Type = "button", Url = "http://www.automationasaservice.com/ui/#shapr/launches/all"}
+        };
+        public List<Attachment> GetAttchement()
+        {
+            return new List<Attachment> {
+                new Attachment
+            {
+                Actions = cxx,
+                Fallback = "les rapports d'exécution sur:  http://www.automationasaservice.com/ui/#shapr/launches/all"
+            }};
+
+        }
+        #endregion
+
         #region Find By
-        public IWebElement FindBy(By accessibility, string Description = "") // a ameliorer
+        public IWebElement FindBy(By accessibility, string Description = "", bool Scr = false, bool testInput= false) // à ameliorer
         {
             TestContext _cntx = TestContext.CurrentContext;
             try
             {
+                if (Scr.Equals(true))//screenshot a volonté :'(
+                    RPScreenshot();
                 Thread.Sleep(3000);
-                element = _wait.Until(ExpectedConditions.ElementIsVisible(accessibility));
-                Bridge.LogMessage(ReportPortal.Client.Models.LogLevel.Info, Description + Environment.NewLine
-                                                        + "Element HTML: " + "<" + element.TagName + ">; " + element.Text + Environment.NewLine
+                element = _wait.Until(ExpectedConditions.ElementExists(accessibility));
+                Bridge.LogMessage(ReportPortal.Client.Models.LogLevel.Info, "Element: " + "<" + element.TagName + ">; " + element.Text + Environment.NewLine
                                                         + "PositionX: " + element.Location.X + "  |  "
                                                         + "PositionY: " + element.Location.Y + Environment.NewLine
                                                         + "Hauteur: " + element.Size.Height + "  |  "
                                                         + "Largeur: " + element.Size.Width + Environment.NewLine
                                                         + "Affiché?: " + element.Displayed);
-                // Vérifier qie l'élèment est bien visible.
-                Assert.IsTrue(element.Displayed, " element " + accessibility + " non visible");
-                // Hauteur non null.
-                Assert.NotZero(element.Size.Height, " hauteur element " + accessibility + " null ..");
-                // Largeur non null aussi.
-                Assert.NotZero(element.Size.Width, " largeur element " + accessibility + " null ..");
+                Assert.IsTrue(element.Displayed, " element " + accessibility + " non visible");// Vérifier qie l'élèment est bien visible.
+                Assert.NotZero(element.Size.Height, " hauteur element " + accessibility + " null ..");// Hauteur non null.
+                Assert.NotZero(element.Size.Width, " largeur element " + accessibility + " null ..");// Largeur non null aussi.
+
+                if (testInput)
+                {
+                    foreach (var txt in ValueInput)
+                    {
+                        element.Clear();
+                        element.SendKeys(txt);
+                        Assert.IsTrue(element.Text.Contains(txt), "");
+                        ///Assert.Contains(txt.ToLower(), new List<string> { element.Text.ToLower() });
+                        element.Clear();
+                    }
+
+                }
             }
             catch (WebDriverTimeoutException ex)
             {
@@ -111,14 +186,14 @@ namespace AndroidUITesting
         #endregion Find By
 
         #region ReportPortal API
-        public void RPComment(string comment)
+        public void RPComment(string comment, ReportPortal.Client.Models.LogLevel logLevel)
         {
-            Bridge.LogMessage(ReportPortal.Client.Models.LogLevel.Info, comment);
+            Bridge.LogMessage(logLevel, comment);
         }
         public void RPComment(IWebElement element, string comment = "")
         {
-            Bridge.LogMessage(ReportPortal.Client.Models.LogLevel.Info, comment + Environment.NewLine
-                                                                                + "Element HTML: " + "<" + element.TagName + ">; " + element.Text
+            Bridge.LogMessage(ReportPortal.Client.Models.LogLevel.Info, comment 
+                                                                                + "Element: " + "<" + element.TagName + ">; " + element.Text
                                                                                 + Environment.NewLine
                                                                                 + "PositionX: " + element.Location.X + "  |  "
                                                                                 + "PositionY: " + element.Location.Y + Environment.NewLine
@@ -128,9 +203,8 @@ namespace AndroidUITesting
         }
         public void RPScreenshot(string comment = "")
         {
-            Bridge.LogMessage(ReportPortal.Client.Models.LogLevel.Info, comment + Environment.NewLine + _driverANDROID.Url
-                                                                        + Environment.NewLine + _driverANDROID.Title
-                                                                        + " {rp#file#" + TakeScreenshot(_driverANDROID, rnd.Next().ToString()) + "}");
+            Bridge.LogMessage(ReportPortal.Client.Models.LogLevel.Info, comment
+                                                                        + " {rp#file#" + TakeScreenshot(_driverANDROID, rnd.Next().ToString()).Item1 + "}");
         }
         #endregion ReportPortal API
 
@@ -247,7 +321,7 @@ namespace AndroidUITesting
             string _nameCaptureEcran = type + DateTime.Now.ToString("MMdHHmmss") + deviceUDID + ".jpg";
             string _cheminCaptureEcran = PathProject() + "ANDROIDSCR\\" + _nameCaptureEcran;
             var encoder = ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
-            var encParams = new EncoderParameters() { Param = new[] { new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 75L) } };
+            var encParams = new EncoderParameters() { Param = new[] { new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 60L) } };
 
             _ceImg.Save(_cheminCaptureEcran, encoder, encParams);
 
@@ -276,5 +350,96 @@ namespace AndroidUITesting
             return projectPath;
         }
         #endregion ScreenShot ANDROID
+
+        #region En attendant BDD
+        public string NomTelephone(string udid)
+        {
+            
+            string deviceName = "à définir";
+            switch (udid)
+            {
+                //HUAWEI P10 Lite
+                case "2XJDU17725001264":
+                    deviceName = "HUAWEI P10 Lite";
+                    break;
+                //Galaxy A5
+                case "3300ec7c93ab338f":
+                    deviceName = "Samsung Galaxy A5";
+                    break;
+                //HUAWEI P10 Lite
+                case "RF8M323KZMY":
+                    deviceName = "Samsung Glaxy S10";
+                    break;
+                //Galaxy Note 8
+                case "ce061716c39258a30d7e":
+                    deviceName = "Samsung Galaxy Note 8";
+                    break;
+                //Galaxy S8"
+                case "ce03171339068c0b0c":
+                    deviceName = "Samsung Galaxy S8";
+                    break;
+                //Nexus 5
+                case "00db8560e4cb4188":
+                    deviceName = "Nexus 5";
+                    break;
+                //Honor 8
+                case "73QFL17828000061":
+                    deviceName = "Honor 8";
+                    break;
+                //Wiko Lenny
+                case "0123456789ABCDEF":
+                    deviceName = "Wiko Lenny";
+                    break;
+                //Wiko Wax
+                case "0000000010FE8300":
+                    deviceName = "Wiko Wax";
+                    break;
+                //Huawei 5X
+                case "W6HDU17616002733":
+                    deviceName = "Huawei 5X";
+                    break;
+                case "H8WDU16629002724":
+                    deviceName = "HUAWEI P10 Lite";
+                    break;
+                //Galaxy A3
+                case "85946ab2":
+                    deviceName = "Samsung Galaxy A3";
+                    break;
+                //Galaxy S8
+                case "ce0117119b24d62d01":
+                    deviceName = "Samsung Galaxy S8";
+                    break;
+                //Galaxy S8 plus
+                case "ce051715d018af3c03":
+                    deviceName = "Samsung Galaxy S8 plus";
+                    break;
+                //Samsung GALAXY S9
+                case "1cc466b440027ece":
+                    deviceName = "Samsung GALAXY S9";
+                    break;
+                //Samsung GALAXY S9 Plus
+                case "1c91a23c670d7ece":
+                    deviceName = "Samsung GALAXY S9 Plus";
+                    break;
+                //Samsung GALAXY S7
+                case "9885b635494d373655":
+                    deviceName = "Samsung GALAXY S7";
+                    break;
+                //Samsung GALAXY S6 Edge
+                case "1115fb745e5e3e05":
+                    deviceName = "Samsung Galaxy S6 Edge";
+                    break;
+                //Samsung GALAXY S6
+                case "02157df28d5d822f":
+                    deviceName = "GALAXY S6";
+                    break;
+                //Samsung GALAXY J5
+                case "0b23c81a":
+                    deviceName = "GALAXY J5";
+                    break;
+            }
+            return deviceName;
+        }
+        #endregion
     }
 }
