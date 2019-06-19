@@ -26,25 +26,16 @@ namespace AndroidUITesting
 { //cmd appops set <package> READ_CLIPBOARD ignore
     public class Fixtures
     {
-        public List<string> ValueInput = new List<string> { "Alphanumerique123", "123456", "Alphabetique" };
-        public List<string> ValueTxt = new List<string> { "Alphanumerique123", "123456" };
         public AndroidDriver<AndroidElement> _driverANDROID;
         public WebDriverWait _wait;
         string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        //2XJDU17725001264 P:25-- P10 Lite
-        //0123456789ABCDEF P:27-- Lenny 2
-        //ce051715d018af3c03 P:23 -- Galaxy S8Plus
-        //1cc466b440027ece P:29 -- Galaxy S9
-        //ce061716c39258a30d7e P:31 -- Galaxy Note 8
-        //3300ec7c93ab338f P:33 -- Galaxy A5
         public string UDID = "ce051715d018af3c03"; 
         public string computerName = Environment.MachineName;
         public int checkAppiumCount = 0, attemps = 0, PORT = 4723;
         public IWebElement element;
-
         Random rnd = new Random();
-        private TestContext ctx;
-        private ExecNotifBuilder ts = new ExecNotifBuilder();
+
+        private TestContext contexte;
         public int Height, Width, x, y, starty, endy, startx;
         public double startTime, endTime;
 
@@ -84,10 +75,8 @@ namespace AndroidUITesting
             _wait = new WebDriverWait(_driverANDROID, TimeSpan.FromSeconds(20));
             Height = _driverANDROID.Manage().Window.Size.Height;
             Width = _driverANDROID.Manage().Window.Size.Width;
-            starty = Height / 2;
-            endy = (int)(Height * 0.90);
-            startx = Width / 2;
-            _driverANDROID.ResetApp(); // Caches et donnée a supprimer
+            // Caches et donnée a supprimer
+            // _driverANDROID.ResetApp()
         }
 
         [TearDown]
@@ -97,34 +86,11 @@ namespace AndroidUITesting
             RPScreenshot("Status avant la fin de l'execution");
             //Fermeture Application
             _driverANDROID.Quit();
-            TestContext ctx = TestContext.CurrentContext;
-            if (ctx.Result.Outcome == ResultState.Success)
-                ts.Passed++;
-            else
-            {
-                ts.Failed++;
-                ts.TestsFailedName.Add(ctx.Test.FullName);
-            }
-            ts.time += (endTime - startTime);
         }
 
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            if (ts.Failed==0 && ts.Passed!=0)
-            {
-                //Slack notif   
-                SlackClient slack = new SlackClient();
-                ctx = TestContext.CurrentContext;
-                slack.PostMessage(username: " ",
-                    text: "Téléphone(UDID): " + NomTelephone(UDID)
-                          + "  | OS: " + "ANDROID"
-                          + "  | BUILD: " + "PROD - 686"
-                          + "  | Passed: " + ts.Passed
-                          + "  | Failed: " + ts.Failed
-                          + "  | Temps d'execution: " + Math.Round(ts.time / 60) + " minute(s)"
-                          , channel: "#automatisation", attch: GetAttchement());
-            }
         }
 
         #region Attachements SLACK
@@ -163,19 +129,6 @@ namespace AndroidUITesting
                 Assert.IsTrue(element.Displayed, " element " + accessibility + " non visible");// Vérifier qie l'élèment est bien visible.
                 Assert.NotZero(element.Size.Height, " hauteur element " + accessibility + " null ..");// Hauteur non null.
                 Assert.NotZero(element.Size.Width, " largeur element " + accessibility + " null ..");// Largeur non null aussi.
-
-                if (testInput)
-                {
-                    foreach (var txt in ValueInput)
-                    {
-                        element.Clear();
-                        element.SendKeys(txt);
-                        Assert.IsTrue(element.Text.Contains(txt), "");
-                        ///Assert.Contains(txt.ToLower(), new List<string> { element.Text.ToLower() });
-                        element.Clear();
-                    }
-
-                }
             }
             catch (WebDriverTimeoutException ex)
             {
@@ -350,96 +303,5 @@ namespace AndroidUITesting
             return projectPath;
         }
         #endregion ScreenShot ANDROID
-
-        #region En attendant BDD
-        public string NomTelephone(string udid)
-        {
-            
-            string deviceName = "à définir";
-            switch (udid)
-            {
-                //HUAWEI P10 Lite
-                case "2XJDU17725001264":
-                    deviceName = "HUAWEI P10 Lite";
-                    break;
-                //Galaxy A5
-                case "3300ec7c93ab338f":
-                    deviceName = "Samsung Galaxy A5";
-                    break;
-                //HUAWEI P10 Lite
-                case "RF8M323KZMY":
-                    deviceName = "Samsung Glaxy S10";
-                    break;
-                //Galaxy Note 8
-                case "ce061716c39258a30d7e":
-                    deviceName = "Samsung Galaxy Note 8";
-                    break;
-                //Galaxy S8"
-                case "ce03171339068c0b0c":
-                    deviceName = "Samsung Galaxy S8";
-                    break;
-                //Nexus 5
-                case "00db8560e4cb4188":
-                    deviceName = "Nexus 5";
-                    break;
-                //Honor 8
-                case "73QFL17828000061":
-                    deviceName = "Honor 8";
-                    break;
-                //Wiko Lenny
-                case "0123456789ABCDEF":
-                    deviceName = "Wiko Lenny";
-                    break;
-                //Wiko Wax
-                case "0000000010FE8300":
-                    deviceName = "Wiko Wax";
-                    break;
-                //Huawei 5X
-                case "W6HDU17616002733":
-                    deviceName = "Huawei 5X";
-                    break;
-                case "H8WDU16629002724":
-                    deviceName = "HUAWEI P10 Lite";
-                    break;
-                //Galaxy A3
-                case "85946ab2":
-                    deviceName = "Samsung Galaxy A3";
-                    break;
-                //Galaxy S8
-                case "ce0117119b24d62d01":
-                    deviceName = "Samsung Galaxy S8";
-                    break;
-                //Galaxy S8 plus
-                case "ce051715d018af3c03":
-                    deviceName = "Samsung Galaxy S8 plus";
-                    break;
-                //Samsung GALAXY S9
-                case "1cc466b440027ece":
-                    deviceName = "Samsung GALAXY S9";
-                    break;
-                //Samsung GALAXY S9 Plus
-                case "1c91a23c670d7ece":
-                    deviceName = "Samsung GALAXY S9 Plus";
-                    break;
-                //Samsung GALAXY S7
-                case "9885b635494d373655":
-                    deviceName = "Samsung GALAXY S7";
-                    break;
-                //Samsung GALAXY S6 Edge
-                case "1115fb745e5e3e05":
-                    deviceName = "Samsung Galaxy S6 Edge";
-                    break;
-                //Samsung GALAXY S6
-                case "02157df28d5d822f":
-                    deviceName = "GALAXY S6";
-                    break;
-                //Samsung GALAXY J5
-                case "0b23c81a":
-                    deviceName = "GALAXY J5";
-                    break;
-            }
-            return deviceName;
-        }
-        #endregion
     }
 }

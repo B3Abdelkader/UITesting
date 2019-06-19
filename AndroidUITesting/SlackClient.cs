@@ -9,15 +9,15 @@ using System.Threading.Tasks;
 
 namespace TDDevices
 {
-    //A simple C# class to post messages to a Slack channel
-    //Note: This class uses the Newtonsoft Json.NET serializer available via NuGet
+    /// <summary>
+    /// Class de POST de message sur Slack. Utilisation Newtonsoft Json.NET serializer
+    /// </summary>
     public class SlackClient
     {
         private readonly Uri _uri;
         private readonly Encoding _encoding = new UTF8Encoding();
 
-        //LAB Shapr initial https://hooks.slack.com/services/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
-        public SlackClient(string urlWithAccessToken= "https://hooks.slack.com/services/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")//Shapr Android
+        public SlackClient(string urlWithAccessToken= "")
         {
             _uri = new Uri(urlWithAccessToken);
         }
@@ -44,7 +44,6 @@ namespace TDDevices
                 NameValueCollection data = new NameValueCollection();
                 data["payload"] = payloadJson;
                 var response = client.UploadValues(_uri, "POST", data);
-                //The response text is usually "ok"
                 string responseText = _encoding.GetString(response);
             }
         }

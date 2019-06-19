@@ -1,1 +1,0 @@
-nunit3-console.exe C:\Users\CONNECTEUR-ROG-C\source\repos\ShaprAndroid\AndroidUITesting\bin\x86\GalaxyNote8\AndroidUITesting.dll
