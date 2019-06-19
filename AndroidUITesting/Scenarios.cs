@@ -39,7 +39,7 @@ namespace AndroidUITesting
             Author = "BYRON Group")]
         public void CompteUtilisateur()
         {
-
+            _driverANDROID.Navigate().GoToUrl("https://www.free.fr");
         }
     }
 }

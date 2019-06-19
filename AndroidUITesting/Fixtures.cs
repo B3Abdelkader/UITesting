@@ -29,7 +29,7 @@ namespace AndroidUITesting
         public AndroidDriver<AndroidElement> _driverANDROID;
         public WebDriverWait _wait;
         string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        public string UDID = "ce051715d018af3c03"; 
+        public string UDID = "85946ab2"; 
         public string computerName = Environment.MachineName;
         public int checkAppiumCount = 0, attemps = 0, PORT = 4723;
         public IWebElement element;
@@ -46,17 +46,17 @@ namespace AndroidUITesting
             DesiredCapabilities _cap = new DesiredCapabilities();
 
             #region Si Application (.apk)
-            _cap.SetCapability("autoGrantPermissions", true);
-            _cap.SetCapability("autoDismissAlerts", true);
-            _cap.SetCapability(MobileCapabilityType.App, @"C:\Users\CONNECTEUR-ROG-C\Downloads\686.apk");
-            _cap.SetCapability(AndroidMobileCapabilityType.AppPackage, "com.shapr");
-            _cap.SetCapability(AndroidMobileCapabilityType.AppActivity, "com.shapr.feature.splash.SplashActivity");
-            //_cap.SetCapability(MobileCapabilityType.FullReset, true);
-            //_cap.SetCapability(MobileCapabilityType.NoReset, false);
+            //_cap.SetCapability("autoGrantPermissions", true);
+            //_cap.SetCapability("autoDismissAlerts", true);
+            //_cap.SetCapability(MobileCapabilityType.App, @"C:\Users\CONNECTEUR-ROG-C\Downloads\686.apk");
+            //_cap.SetCapability(AndroidMobileCapabilityType.AppPackage, "com.shapr");
+            //_cap.SetCapability(AndroidMobileCapabilityType.AppActivity, "com.shapr.feature.splash.SplashActivity");
+            ////_cap.SetCapability(MobileCapabilityType.FullReset, true);
+            ////_cap.SetCapability(MobileCapabilityType.NoReset, false);
             #endregion Si Application (.apk)
 
             #region Si Navigateur Mobile (Chrome)
-            //_cap.SetCapability(MobileCapabilityType.BrowserName, MobileBrowserType.Chrome);
+            _cap.SetCapability(MobileCapabilityType.BrowserName, MobileBrowserType.Chrome);
             //_cap.SetCapability("chromedriverExecutable", @"C:\WEBDRIVERS\chromedriver.exe");
             #endregion Si Navigateur Mobile (Chrome)
 
@@ -73,8 +73,6 @@ namespace AndroidUITesting
             _driverANDROID = new AndroidDriver<AndroidElement> // Serveur de lancement d'application
                             (new Uri("http://" + LocalIPAddress + ":" + PORT.ToString() + "/wd/hub"), _cap);
             _wait = new WebDriverWait(_driverANDROID, TimeSpan.FromSeconds(20));
-            Height = _driverANDROID.Manage().Window.Size.Height;
-            Width = _driverANDROID.Manage().Window.Size.Width;
             // Caches et donnée a supprimer
             // _driverANDROID.ResetApp()
         }
